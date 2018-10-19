@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+{% load staticfiles %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>haha</title>
+    <link rel="stylesheet" href="http://apps.bdimg.com/libs/bootstrap/3.3.4/css/bootstrap.min.css" >
+	<style>
+		body {font-size: 40px;  background: #ebebeb url('');padding-bottom: 30px;}
+		tr {font}
+		.navbar { min-height: 50px;background: #333; color: #fff; padding: 20px;  }
+        .content {padding:20px;}
+        .ss {font-size: 20px;}
+
+	</style>
+
+</head>
+<body>
+	<div class="navbar">
+		ssr云监控
+	</div>
+	<div class="content">
+		<div class="table-head" >
+			<span class="col-xs-3" >用户</span>
+			<span class="col-xs-3">端口</span>
+			<span class="col-xs-3">流量已用</span>
+			<span class="col-xs-3">总流量</span>
+		</div>
+		{% for user in users%}
+		<div class="col-xs-12">
+			<div class="short">
+				<span class="col-xs-3">{{user.user}}</span>
+				<span class="col-xs-3">{{user.port}}</span>
+				<span class="col-xs-3">{{user.used}}</span>
+				<span class="col-xs-3">{{user.traffic}}</span>
+			</div>
+			<div class="hide1" style="display:none">
+				<p>密码： {{user.passwd}}</p>
+				<p>加密： {{user.method}}</p>
+				<p>协议： {{user.protocol}}</p>
+				<p>混淆： {{user.obfs}}</p>
+                <p >ss链接： <a class="ss" href="{{user.sslink}}">{{user.sslink}}</a></p>
+			</div>
+		</div>
+        {% endfor%}
+
+
+	</div>
+
+<script type='text/javascript' src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+	$(".short").click(function(){
+    $(this).parent().find(".hide1").toggle(500);
+});
+</script>
+
+</body>
+</html>
+
