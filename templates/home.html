@@ -18,11 +18,12 @@
         label {margin: 0;padding: 12px;}
         .form-horizontal {padding-top: 15px;}
         .info {margin: 10px;padding: 5px;}
+        select {border: 2px; margin: 1px 1px;padding: 12px 15px; border-color: #fff;}
 	</style>
 </head>
 <body>
 	<div class="navbar">
-		ss-web
+		<a href="/" style="color: #fff">ss-web</a>
 	</div>
 	<div class="content">
 		<div class="table-head" >
@@ -50,59 +51,67 @@
 					<p >ssr链接： <a class="ss" href="{{user.ssrlink}}">{{user.ssrlink}}</a></p>
 		    	</div>
 				<div class="col-xs-12" style="padding: 30px 0px;">
-		        	<button  class="btn-primary edit">修改配置</button>
+		        	<button  class="btn-primary modify">修改配置</button>
 		        	<button  class="btn-primary delete" port="{{user.port}}">删除用户</button>
 		        </div>
 		        <form class="form-horizontal" role="form" style="display:none">
-			        <div class="form-group"  >
+		        	<div><p>---用户名与端口不可修改---</p></div>
+			        <div class="form-group"  style="display: none">
 			        	<label for="firstname" class="col-sm-2">用户：</label>
-      					<div class="col-sm-6">
-					        <input type="text"   placeholder="用户名">
-					    </div>
+	  					<div class="col-sm-6">
+					        <input type="text"  name="name"  value="{{user.user}}" >
+					     </div>
 			        </div>
-			        <div class="form-group"  >
+			        <div class="form-group" style="display: none" >
 			        	<label for="firstname" class="col-sm-2">端口：</label>
       					<div class="col-sm-6">
-					        <input type="text"   placeholder="{{user.port}}(端口禁止修改)" disabled>
+					        <input type="text"  name="port" value="{{user.port}}" >
 					    </div>
 			        </div>
 			        <div class="form-group"  >
 			        	<label for="firstname" class="col-sm-2">密码：</label>
-      					<div class="col-sm-6">
-					        <input type="text"   placeholder="密码(留空则随机)">
+	  					<div class="col-sm-6">
+					        <input type="text"  name="passwd"  placeholder="密码(留空则随机)">
 					     </div>
 			        </div>
 			        <div class="form-group"  >
-			        	<label for="firstname" class="col-sm-2">加密</label>
-      					<select class="col-sm-6">
-				            <option>1</option>
-				            <option>2</option>
-				            <option>3</option>
-				            <option>4</option>
-				            <option>5</option>
+			        	<label for="firstname" class="col-sm-2">加密：</label>
+	  					<select name="method">
+	                        <option>aes-256-cfb  </option>
+				            <option>aes-192-cfb  </option>
+				            <option>aes-128-cfb  </option>
+				            <option>rc4-md5      </option>
+	                        <option>rc4-md5-6    </option>
+	                        <option>chacha20     </option>
+	                        <option>chacha20-ietf</option>
+	                        <option>salsa20      </option>
+	                        <option>aes-128-ctr  </option>
+	                        <option>aes-192-ctr  </option>
+	                        <option>aes-256-ctr  </option>
 					    </select>
 			        </div>
 			        <div class="form-group"  >
-			        	<label for="firstname" class="col-sm-2">协议</label>
-      					<select class="col-sm-6">
-				            <option>1</option>
-				            <option>2</option>
-				            <option>3</option>
-				            <option>4</option>
-				            <option>5</option>
+			        	<label for="firstname" class="col-sm-2">协议：</label>
+	  					<select name="protocol">
+				            <option>origin                  </option>
+				            <option>auth_sha1_v4            </option>
+				            <option>auth_sha1_v4_compatible </option>
+				            <option>auth_aes128_md5         </option>
+				            <option>auth_aes128_sha1        </option>
+	                        <option>auth_chain_a            </option>
 					    </select>
 			        </div>
 			        <div class="form-group"  >
-			        	<label for="firstname" class="col-sm-2">混淆</label>
-      					<select class="col-sm-6">
-				            <option>1</option>
-				            <option>2</option>
-				            <option>3</option>
-				            <option>4</option>
-				            <option>5</option>
+			        	<label for="firstname" class="col-sm-2">混淆：</label>
+	  					<select name="obfs">
+				            <option>plain                        </option>
+				            <option>http_simple_compatible       </option>
+				            <option>http_simple                  </option>
+				            <option>tls1.2_ticket_auth_compatible</option>
+				            <option>tls1.2_ticket_auth           </option>
 					    </select>
 			        </div>
-			        <button  class="btn-default">确认修改</button>
+			        <button  class="btn-primary edit">确认修改</button>
 		    	</form>
 		    	
 		    	
@@ -136,21 +145,40 @@
 		        </div>
 		        <div class="form-group"  >
 		        	<label for="firstname" class="col-sm-2">加密：</label>
-  					<div class="col-sm-6">
-				        <input type="text"   placeholder="默认使用aes-256-cfb" disabled>
-				    </div>
+  					<select name="method">
+                        <option>aes-256-cfb  </option>
+			            <option>aes-192-cfb  </option>
+			            <option>aes-128-cfb  </option>
+			            <option>rc4-md5      </option>
+                        <option>rc4-md5-6    </option>
+                        <option>chacha20     </option>
+                        <option>chacha20-ietf</option>
+                        <option>salsa20      </option>
+                        <option>aes-128-ctr  </option>
+                        <option>aes-192-ctr  </option>
+                        <option>aes-256-ctr  </option>
+				    </select>
 		        </div>
 		        <div class="form-group"  >
 		        	<label for="firstname" class="col-sm-2">协议：</label>
-  					<div class="col-sm-6">
-				        <input type="text"   placeholder="默认使用origin" disabled>
-				    </div>
+  					<select name="protocol">
+			            <option>origin                  </option>
+			            <option>auth_sha1_v4            </option>
+			            <option>auth_sha1_v4_compatible </option>
+			            <option>auth_aes128_md5         </option>
+			            <option>auth_aes128_sha1        </option>
+                        <option>auth_chain_a            </option>
+				    </select>
 		        </div>
 		        <div class="form-group"  >
 		        	<label for="firstname" class="col-sm-2">混淆：</label>
-  					<div class="col-sm-6">
-				        <input type="text"   placeholder="默认使用plain" disabled>
-				    </div>
+  					<select name="obfs">
+			            <option>plain                        </option>
+			            <option>http_simple_compatible       </option>
+			            <option>http_simple                  </option>
+			            <option>tls1.2_ticket_auth_compatible</option>
+			            <option>tls1.2_ticket_auth           </option>
+				    </select>
 		        </div>
 		        <button  class="submit-bt btn-primary">确认添加</button>
 	    	</form>
@@ -164,7 +192,7 @@
 	$(".short").click(function(){
     $(this).parent().find(".hide1").toggle(500);
 });
-	$(".edit").click(function(){
+	$(".modify").click(function(){
     $(this).parent().parent().find(".form-horizontal").toggle(500);
 });
 	$(".add").click(function(){
@@ -174,6 +202,14 @@
 	var port = $(this).attr("port");
     var url = "/delete/";
     $.post(url,{'port':port},
+    function(data,status){
+    	window.location.reload()
+    })
+});
+	$(".edit").click(function(){
+    var post_data = $(this).parent().serializeArray();
+    var url = '/edit'
+    $.post(url,post_data,
     function(data,status){
     	window.location.reload()
     })
@@ -195,4 +231,5 @@
 </footer>
 </body>
 </html>
+
 

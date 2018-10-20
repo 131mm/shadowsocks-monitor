@@ -346,30 +346,68 @@ def user_info(request):
 def add_user(request):
     if request.method == 'POST':
         name=request.POST.get('name','')
-        passwd=request.POST.get('passwd','')
         port=request.POST.get('port','')
+        passwd=request.POST.get('passwd','')
+        method=request.POST.get('method','')
+        protocol=request.POST.get('protocol','')
+        obfs=request.POST.get('obfs','')
         if name and port:
             port=int(port)
-            if port<65000:
-                if passwd:
-                    user={
-                        'user':name,
-                        'passwd':passwd,
-                        'port':port,
-                    }
-                else:
-                    user={
+            if port<65534:
+                user={
                         'user':name,
                         'port':port,
                     }
-                app1=ssr()
-                app1.add(user)
-                app1.del_rule(port)
-                app1.add_rule(port)
-                app1.save_table()
+            else:return HttpResponse('error')
+            if passwd:
+                user.update({'passwd':passwd})
+            if method:
+                user.update({'method':method})
+            if protocol:
+                user.update({'protocol':protocol})
+            if obfs:
+                user.update({'obfs':obfs})
+
+            app.add(user)
+            app.del_rule(port)
+            app.add_rule(port)
+            app.save_table()
         return HttpResponse('test')
     else:
         return HttpResponseRedirect('/')
+
+
+@csrf_exempt
+def edit_user(request):
+    if request.method == 'POST':
+        name=request.POST.get('name','')
+        port=request.POST.get('port','')
+        passwd=request.POST.get('passwd','')
+        method=request.POST.get('method','')
+        protocol=request.POST.get('protocol','')
+        obfs=request.POST.get('obfs','')
+        if port:
+            port=int(port)
+            if port<65534:
+                user={
+                        'port':port,
+                    }
+            else:return HttpResponse('error')
+            if name:
+                user.update({'user':name})
+            if passwd:
+                user.update({'passwd':passwd})
+            if method:
+                user.update({'method':method})
+            if protocol:
+                user.update({'protocol':protocol})
+            if obfs:
+                user.update({'obfs':obfs})
+            app.edit(user)
+        return HttpResponse('test')
+    else:
+        return HttpResponseRedirect('/')
+
 
 @csrf_exempt
 def delete_user(request):
@@ -388,7 +426,3 @@ def delete_user(request):
 
     else:return HttpResponseRedirect('/')
 
-
-if __name__ == '__main__':
-    port=9909
-    print('iptables -I INPUT -m state --state NEW -m udp -p udp --dport {} -j ACCEPT'.format(port))

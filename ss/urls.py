@@ -7,6 +7,7 @@ urlpatterns=[
     url(r'^$',views.home,name='home'),
     url(r'^user/$',views.user_info,name='user_info'),
     url(r'^add',views.add_user,name='add_user'),
-    url(r'^delete',views.delete_user,name='delete_user')
+    url(r'^delete',views.delete_user,name='delete_user'),
+    url(r'^edit',views.edit_user,name='edit_user'),
 ]
 urlpatterns += staticfiles_urlpatterns()
