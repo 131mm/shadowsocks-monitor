@@ -1,14 +1,14 @@
-#Shadowsocks web powered by django
+# Shadowsocks web powered by django
 
-##Functions:
+## Functions:
 
- 1、add user
+- [x] 1、add user
 
- 2、delete user
+- [x] 2、delete user
 
- 3、change settings
+- [ ] 3、change settings
 
-##How to use? 
+## How to use? 
 
 this web is working with another ssr shell, ssrmu.sh [https://github.com/ToyoDAdoubi/doubi](https://github.com/ToyoDAdoubi/doubi), download that shell and run it before you start this web.
 
