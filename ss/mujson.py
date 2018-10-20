@@ -1,26 +1,16 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-import random,getopt,sys,json,base64,socket
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponseRedirect
 
-# Create your views here.
+import random
+import getopt
+import sys
+import json
+import base64
+
 
 class Address():
-    #ssr_folder='C://User/13395/ubun/shadowsocksr'
     ssr_folder='/Users/sanji/hexo/shadowsocksr'
-    config_file=ssr_folder+'/config.json'
-    config_user_file=ssr_folder+'/user-config.json'
-    config_user_api_file=ssr_folder+'/userapiconfig.py'
     config_user_mudb_file=ssr_folder+'/mudb.json'
-    ssr_log_file=ssr_folder+'/ssserver.log'
-    Libsodiumr_file="/usr/local/lib/libsodium.so"
-    Libsodiumr_ver_backup="1.0.15"
-    Server_Speeder_file="/serverspeeder/bin/serverSpeeder.sh"
-    LotServer_file="/appex/bin/serverSpeeder.sh"
-    jq_file=ssr_folder+'/jq'
 
 
 class MuJsonLoader(object):
@@ -69,15 +59,14 @@ class MuMgr(object):
                 pass
         return ret
 
-    def ssrlink(self, user):
+    def ssrlink(self, user, encode, muid=None):
         protocol = user.get('protocol', '')
         obfs = user.get('obfs', '')
         protocol = protocol.replace("_compatible", "")
         obfs = obfs.replace("_compatible", "")
-        passwd64=base64.b64encode(user['passwd'].encode('utf-8'))
-        passwd64=str(passwd64, 'utf-8')
-        link = ("%s:%s:%s:%s:%s:%s" % (self.getipaddr(), user['port'], protocol, user['method'], obfs, (passwd64.replace("=", "")).encode('utf-8')))
-        return "ssr://"+str(base64.b64encode(link.encode('utf-8')),'utf-8')
+        passwd64=base64.b64encode(user['passwd'])
+        link = ("%s:%s:%s:%s:%s:%s" % (self.server_addr, user['port'], protocol, user['method'], obfs, passwd64.replace("=", "")))
+        return "ssr://"+base64.b64encode(link.encode('utf-8'))
 
     def userinfo(self, user, muid = None):
         ret = ""
@@ -127,10 +116,10 @@ class MuMgr(object):
             'enable': 1,
             'u': 0,
             'd': 0,
-            'method': "aes-256-cfb",
-            'protocol': "origin",
-            'obfs': "plain",
-            'transfer_enable': 53687091200
+            'method': "aes-128-ctr",
+            'protocol': "auth_aes128_md5",
+            'obfs': "tls1.2_ticket_auth_compatible",
+            'transfer_enable': 9007199254740992
         }
         up['passwd'] = self.rand_pass()
         up.update(user)
@@ -143,8 +132,10 @@ class MuMgr(object):
             if 'port' in user and row['port'] == user['port']:
                 match = True
             if match:
+                print("user [%s] port [%s] already exist" % (row['user'], row['port']))
                 return
         self.data.json.append(up)
+        print("### add user info %s" % self.userinfo(up))
         self.data.save(self.config_path)
 
     def edit(self, user):
@@ -158,6 +149,7 @@ class MuMgr(object):
             if match:
                 print("edit user [%s]" % (row['user'],))
                 row.update(user)
+                print("### new user info %s" % self.userinfo(row))
                 break
         self.data.save(self.config_path)
 
@@ -171,6 +163,7 @@ class MuMgr(object):
             if 'port' in user and row['port'] != user['port']:
                 match = False
             if match:
+                print("delete user [%s]" % row['user'])
                 del self.data.json[index]
                 break
             index += 1
@@ -207,167 +200,157 @@ class MuMgr(object):
                 if 'muid' in user:
                     muid = user['muid']
                 print("### user [%s] info %s" % (row['user'], self.userinfo(row, muid)))
-    def Print_User_info(self,user):
-        i=user
-        print('用户',i['user'],'的配置信息：')
-        print('IP:    ',)
-        print('端口：  ',i['port'])
-        print('密码：  ',i['passwd'])
-        print('加密：  ',i['method'])
-        print('协议：  ',i['protocol'])
-        print('混淆：  ',i['obfs'])
-        print('流量：  ',i['traffic'])
-        print('已用：  ',i['used'])
-        print('ss链接：',i['sslink'])
-        print('ssr链接:',i['ssrlink'])
 
 
-class ssr(Address,MuMgr):
-    def triffic(self,big):
-        flag = 0
-        tr = 0
-        units = {0: 'B', 1: 'K', 2: 'M', 3: 'G'}
-        little = int(big / 1024)
-        for i in range(4):
-            if little:
-                tr = little
-                little = int(little / 1024)
-                flag += 1
-            else:
-                return str(tr) + units[flag]
+def print_server_help():
+    print('''usage: python mujson_manage.py -a|-d|-e|-c|-l [OPTION]...
+
+Actions:
+  -a                   add/edit a user
+  -d                   delete a user
+  -e                   edit a user
+  -c                   set u&d to zero
+  -l                   display a user infomation or all users infomation
+
+Options:
+  -u USER              the user name
+  -p PORT              server port (only this option must be set if add a user)
+  -k PASSWORD          password
+  -m METHOD            encryption method, default: aes-128-ctr
+  -O PROTOCOL          protocol plugin, default: auth_aes128_md5
+  -o OBFS              obfs plugin, default: tls1.2_ticket_auth_compatible
+  -G PROTOCOL_PARAM    protocol plugin param
+  -g OBFS_PARAM        obfs plugin param
+  -t TRANSFER          max transfer for G bytes, default: 8388608 (8 PB or 8192 TB)
+  -f FORBID            set forbidden ports. Example (ban 1~79 and 81~100): -f "1-79,81-100"
+  -i MUID              set sub id to display (only work with -l)
+  -s SPEED             set speed_limit_per_con
+  -S SPEED             set speed_limit_per_user
+
+General options:
+  -h, --help           show this help message and exit
+''')
 
 
-    def ss_link(self,ss):
-        sslink = base64.b64encode(ss.encode('utf-8'))
-        return 'ss://' + str(sslink, 'utf-8')
-
-    def ssrlink(self, user):
-        protocol = user.get('protocol', '')
-        obfs = user.get('obfs', '')
-        protocol = protocol.replace("_compatible", "")
-        obfs = obfs.replace("_compatible", "")
-        passwd64=base64.b64encode(user['passwd'].encode('utf-8'))
-        passwd64=str(passwd64, 'utf-8')
-        link = ("%s:%s:%s:%s:%s:%s" % (self.getipaddr(), user['port'], protocol, user['method'], obfs, (passwd64.replace("=", "")).encode('utf-8')))
-        return "ssr://"+str(base64.b64encode(link.encode('utf-8')),'utf-8')
-
-    def Get_User_info(self,port):
-        with open(self.config_user_mudb_file,'r') as user_file:
-            mudb=json.load(user_file)
-            for i in mudb:
-                if i['port']==port:
-                    ss = i['method'] + ':' + i['passwd'] + '@' + self.getipaddr() + ':' + str(port)
-                    ssr = self.ssrlink(i)
-                    user={
-                        'ip':self.getipaddr(),
-                        'traffic':self.triffic(i['transfer_enable']),
-                        'used':self.triffic(i['d'] + i['u']),
-                        'sslink':self.ss_link(ss),
-                        'ssrlink':ssr
-                    }
-                    user.update(i)
-                    return user
-
-    def Get_all_user           (self):
-        with open(self.config_user_mudb_file, 'r') as user_file:
-            mudb = json.load(user_file)
-            users=[]
-            for i in mudb:
-                ssr = self.ssrlink(i)
-                ss = i['method'] + ':' + i['passwd'] + '@' + self.getipaddr() + ':' + str(i['port'])
-                user={
-                    'ip':self.getipaddr(),
-                    'traffic':self.triffic(i['transfer_enable']),
-                    'used':self.triffic(i['d'] + i['u']),
-                    'sslink':self.ss_link(ss),
-                    'ssrlink':ssr,
-                }
-                user.update(i)
-                users.append(user)
-            return users
-
-    def View_User                (self):
-        while 1:
-            print("请输入要查看账号信息的用户 端口")
-            port=input("(默认: 取消):")
-            if not port:
-                print("已取消...")
-                return 0
-            else:port= int(port)
-            user=self.Get_User_info(port)
-            if not user:
-                print("请输入正确 端口")
-            else: return user
-
-
-app = ssr()
-
-
-def home(request):
-    users=app.Get_all_user()
-    context={'users':users}
-    obj = render(request, 'home.html', context=context)
-    return obj
-
-
-def user_info(request):
-    if 'port' in request.GET:
-        port = request.GET['port']
-    else: port=6001
-    user=app.Get_User_info(port)
-    context=user
-    obj = render(request, 'home.html', context=context)
-    return obj
-
-
-@csrf_exempt
-def add_user(request):
-    if request.method == 'POST':
-        name=request.POST.get('name','')
-        passwd=request.POST.get('passwd','')
-        port=request.POST.get('port','')
-        if name and port:
-            if int(port)<65000:
-                if passwd:
-                    user={
-                        'user':name,
-                        'passwd':passwd,
-                        'port':port,
-                    }
+def main():
+    shortopts = 'adeclu:i:p:k:O:o:G:g:m:t:f:hs:S:'
+    longopts = ['help']
+    action = None
+    user = {}
+    fast_set_obfs = {'0': 'plain',
+            '+1': 'http_simple_compatible',
+            '1': 'http_simple',
+            '+2': 'tls1.2_ticket_auth_compatible',
+            '2': 'tls1.2_ticket_auth'}
+    fast_set_protocol = {'0': 'origin',
+            's4': 'auth_sha1_v4',
+            '+s4': 'auth_sha1_v4_compatible',
+            'am': 'auth_aes128_md5',
+            'as': 'auth_aes128_sha1',
+            'ca': 'auth_chain_a',
+            }
+    fast_set_method = {'0': 'none',
+            'a1c': 'aes-128-cfb',
+            'a2c': 'aes-192-cfb',
+            'a3c': 'aes-256-cfb',
+            'r': 'rc4-md5',
+            'r6': 'rc4-md5-6',
+            'c': 'chacha20',
+            'ci': 'chacha20-ietf',
+            's': 'salsa20',
+            'a1': 'aes-128-ctr',
+            'a2': 'aes-192-ctr',
+            'a3': 'aes-256-ctr'}
+    try:
+        optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+        for key, value in optlist:
+            if key == '-a':
+                action = 1
+            elif key == '-d':
+                action = 2
+            elif key == '-e':
+                action = 3
+            elif key == '-l':
+                action = 4
+            elif key == '-c':
+                action = 0
+            elif key == '-u':
+                user['user'] = value
+            elif key == '-i':
+                user['muid'] = int(value)
+            elif key == '-p':
+                user['port'] = int(value)
+            elif key == '-k':
+                user['passwd'] = value
+            elif key == '-o':
+                if value in fast_set_obfs:
+                    user['obfs'] = fast_set_obfs[value]
                 else:
-                    user={
-                        'user':name,
-                        'port':port,
-                    }
-                app1=MuMgr()
-                app1.add(user)
-        return HttpResponse('test')
-    else:
-        return HttpResponseRedirect('/')
+                    user['obfs'] = value
+            elif key == '-O':
+                if value in fast_set_protocol:
+                    user['protocol'] = fast_set_protocol[value]
+                else:
+                    user['protocol'] = value
+            elif key == '-g':
+                user['obfs_param'] = value
+            elif key == '-G':
+                user['protocol_param'] = value
+            elif key == '-s':
+                user['speed_limit_per_con'] = int(value)
+            elif key == '-S':
+                user['speed_limit_per_user'] = int(value)
+            elif key == '-m':
+                if value in fast_set_method:
+                    user['method'] = fast_set_method[value]
+                else:
+                    user['method'] = value
+            elif key == '-f':
+                user['forbidden_port'] = value
+            elif key == '-t':
+                val = float(value)
+                try:
+                    val = int(value)
+                except:
+                    pass
+                user['transfer_enable'] = int(val * 1024) * (1024 ** 2)
+            elif key in ('-h', '--help'):
+                print_server_help()
+                sys.exit(0)
+    except getopt.GetoptError as e:
+        print(e)
+        sys.exit(2)
 
-@csrf_exempt
-def delete_user(request):
-    if request.method == 'POST':
-        port=request.POST.get('port','')
-        if port:
-            user={
-                    'port':port,
-                }
-            app1=MuMgr()
-            app1.delete(user)
-            return HttpResponse('ok')
+    manage = MuMgr()
+    if action == 0:
+        manage.clear_ud(user)
+    elif action == 1:
+        if 'user' not in user and 'port' in user:
+            user['user'] = str(user['port'])
+        if 'user' in user and 'port' in user:
+            manage.add(user)
+        else:
+            print("You have to set the port with -p")
+    elif action == 2:
+        if 'user' in user or 'port' in user:
+            manage.delete(user)
+        else:
+            print("You have to set the user name or port with -u/-p")
+    elif action == 3:
+        if 'user' in user or 'port' in user:
+            manage.edit(user)
+        else:
+            print("You have to set the user name or port with -u/-p")
+    elif action == 4:
+        manage.list_user(user)
+    elif action is None:
+        print_server_help()
 
-    else:return HttpResponseRedirect('/')
 if __name__ == '__main__':
-    app1=MuMgr()
-    user=app.Get_User_info(55555)
-    user1={
-        'port':55555
+    app=MuMgr()
+    user={
+        'user':'mtest',
+        'port':6088
     }
-    user.update(user1)
-    if user:
-        #app1.edit(user)
-        #app1.add(user)
-        app1.Print_User_info(user)
-        app1.delete(user1)
-    else:print('user not exist')
+    app.add(user)
+    app.list_user(user)
