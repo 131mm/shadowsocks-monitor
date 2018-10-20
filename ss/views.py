@@ -349,7 +349,8 @@ def add_user(request):
         passwd=request.POST.get('passwd','')
         port=request.POST.get('port','')
         if name and port:
-            if int(port)<65000:
+            port=int(port)
+            if port<65000:
                 if passwd:
                     user={
                         'user':name,
@@ -363,6 +364,7 @@ def add_user(request):
                     }
                 app1=ssr()
                 app1.add(user)
+                app1.del_rule(port)
                 app1.add_rule(port)
                 app1.save_table()
         return HttpResponse('test')
@@ -374,6 +376,7 @@ def delete_user(request):
     if request.method == 'POST':
         port=request.POST.get('port','')
         if port:
+            port=int(port)
             user={
                     'port':port,
                 }
@@ -387,4 +390,5 @@ def delete_user(request):
 
 
 if __name__ == '__main__':
-    pass
+    port=9909
+    print('iptables -I INPUT -m state --state NEW -m udp -p udp --dport {} -j ACCEPT'.format(port))
