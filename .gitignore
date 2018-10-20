@@ -2,3 +2,5 @@
 db.sqlite3
 .idea
 .DS_Store
+ssrmu.sh
+uwsgi.ini
