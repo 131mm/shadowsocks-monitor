@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: UTF-8 -*-
-import random,getopt,sys,json,base64,socket
+import random,os,json,base64,socket,struct
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -54,8 +54,6 @@ class MuMgr(object):
         self.server_addr = self.getipaddr()
 
     def getipaddr(self, ifname='eth0'):
-        import socket
-        import struct
         ret = '127.0.0.1'
         try:
             ret = socket.gethostbyname(socket.getfqdn(socket.gethostname()))
@@ -222,7 +220,31 @@ class MuMgr(object):
         print('ssr链接:',i['ssrlink'])
 
 
-class ssr(Address,MuMgr):
+class Iptables():
+    def add_rule(self,port):
+        commands=[]
+        commands.append('iptables -I INPUT -m state --state NEW -m udp -p udp --dport {} -j ACCEPT'.format(port))
+        commands.append('iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport {} -j ACCEPT'.format(port))
+        for c in commands:
+            try:
+                os.popen(c)
+            except: pass
+
+    def del_rule(self,port):
+        commands=[]
+        commands.append('iptables -D INPUT -m state --state NEW -m udp -p udp --dport {} -j ACCEPT'.format(port))
+        commands.append('iptables -D INPUT -m state --state NEW -m tcp -p tcp --dport {} -j ACCEPT'.format(port))
+        for c in commands:
+            try:
+                os.popen(c)
+            except: pass
+
+    def save_table(self):
+        try:
+            os.popen('iptables-save > /etc/iptables.up.rules')
+        except: pass
+
+class ssr(Address,MuMgr,Iptables):
     def triffic(self,big):
         flag = 0
         tr = 0
@@ -339,8 +361,10 @@ def add_user(request):
                         'user':name,
                         'port':port,
                     }
-                app1=MuMgr()
+                app1=ssr()
                 app1.add(user)
+                app1.add_rule(port)
+                app1.save_table()
         return HttpResponse('test')
     else:
         return HttpResponseRedirect('/')
@@ -353,21 +377,14 @@ def delete_user(request):
             user={
                     'port':port,
                 }
-            app1=MuMgr()
+            app1=ssr()
             app1.delete(user)
+            app1.del_rule(port)
+            app1.save_table()
             return HttpResponse('ok')
 
     else:return HttpResponseRedirect('/')
+
+
 if __name__ == '__main__':
-    app1=MuMgr()
-    user=app.Get_User_info(55555)
-    user1={
-        'port':55555
-    }
-    user.update(user1)
-    if user:
-        #app1.edit(user)
-        #app1.add(user)
-        app1.Print_User_info(user)
-        app1.delete(user1)
-    else:print('user not exist')
+    pass
