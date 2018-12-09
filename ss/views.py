@@ -9,18 +9,12 @@ from django.http import HttpResponseRedirect
 # Create your views here.
 
 class Address():
-    #ssr_folder='C://User/13395/ubun/shadowsocksr'
-    ssr_folder='/Users/sanji/hexo/shadowsocksr'
+    ssr_folder='/home/adiao/PycharmProjects/shadowsocksr'
     config_file=ssr_folder+'/config.json'
     config_user_file=ssr_folder+'/user-config.json'
     config_user_api_file=ssr_folder+'/userapiconfig.py'
     config_user_mudb_file=ssr_folder+'/mudb.json'
     ssr_log_file=ssr_folder+'/ssserver.log'
-    Libsodiumr_file="/usr/local/lib/libsodium.so"
-    Libsodiumr_ver_backup="1.0.15"
-    Server_Speeder_file="/serverspeeder/bin/serverSpeeder.sh"
-    LotServer_file="/appex/bin/serverSpeeder.sh"
-    jq_file=ssr_folder+'/jq'
 
 
 class MuJsonLoader(object):
@@ -270,25 +264,10 @@ class ssr(Address,MuMgr,Iptables):
         obfs = obfs.replace("_compatible", "")
         passwd64=base64.b64encode(user['passwd'].encode('utf-8'))
         passwd64=str(passwd64, 'utf-8')
-        link = ("%s:%s:%s:%s:%s:%s" % (self.getipaddr(), user['port'], protocol, user['method'], obfs, (passwd64.replace("=", "")).encode('utf-8')))
+        #passwd64=user['passwd']
+        link = ("%s:%s:%s:%s:%s:%s" % (self.getipaddr(), user['port'], protocol, user['method'], obfs, passwd64.replace('=','')))
         return "ssr://"+str(base64.b64encode(link.encode('utf-8')),'utf-8')
 
-    def Get_User_info(self,port):
-        with open(self.config_user_mudb_file,'r') as user_file:
-            mudb=json.load(user_file)
-            for i in mudb:
-                if i['port']==port:
-                    ss = i['method'] + ':' + i['passwd'] + '@' + self.getipaddr() + ':' + str(port)
-                    ssr = self.ssrlink(i)
-                    user={
-                        'ip':self.getipaddr(),
-                        'traffic':self.triffic(i['transfer_enable']),
-                        'used':self.triffic(i['d'] + i['u']),
-                        'sslink':self.ss_link(ss),
-                        'ssrlink':ssr
-                    }
-                    user.update(i)
-                    return user
 
     def Get_all_user           (self):
         with open(self.config_user_mudb_file, 'r') as user_file:
@@ -308,19 +287,6 @@ class ssr(Address,MuMgr,Iptables):
                 users.append(user)
             return users
 
-    def View_User                (self):
-        while 1:
-            print("请输入要查看账号信息的用户 端口")
-            port=input("(默认: 取消):")
-            if not port:
-                print("已取消...")
-                return 0
-            else:port= int(port)
-            user=self.Get_User_info(port)
-            if not user:
-                print("请输入正确 端口")
-            else: return user
-
 
 app = ssr()
 
@@ -328,16 +294,6 @@ app = ssr()
 def home(request):
     users=app.Get_all_user()
     context={'users':users}
-    obj = render(request, 'home.html', context=context)
-    return obj
-
-
-def user_info(request):
-    if 'port' in request.GET:
-        port = request.GET['port']
-    else: port=6001
-    user=app.Get_User_info(port)
-    context=user
     obj = render(request, 'home.html', context=context)
     return obj
 
@@ -418,11 +374,16 @@ def delete_user(request):
             user={
                     'port':port,
                 }
-            app1=ssr()
-            app1.delete(user)
-            app1.del_rule(port)
-            app1.save_table()
+            app.delete(user)
+            app.del_rule(port)
+            app.save_table()
             return HttpResponse('ok')
-
     else:return HttpResponseRedirect('/')
 
+if __name__ == '__main__':
+    app1=ssr()
+    users=app1.Get_all_user()
+    ssrlink=users[0].get('ssrlink')[6:]
+    ssrlink1=base64.b64decode(ssrlink)
+    print('ssr://'+ssrlink)
+    print(ssrlink1)
