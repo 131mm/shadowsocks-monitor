@@ -9,6 +9,7 @@ from django.http import HttpResponseRedirect
 # Create your views here.
 
 class Address():
+    website='ssweb.com'
     ssr_folder='/home/adiao/PycharmProjects/shadowsocksr'
     config_file=ssr_folder+'/config.json'
     config_user_file=ssr_folder+'/user-config.json'
@@ -265,7 +266,7 @@ class ssr(Address,MuMgr,Iptables):
         passwd64=base64.b64encode(user['passwd'].encode('utf-8'))
         passwd64=str(passwd64, 'utf-8')
         #passwd64=user['passwd']
-        link = ("%s:%s:%s:%s:%s:%s" % (self.getipaddr(), user['port'], protocol, user['method'], obfs, passwd64.replace('=','')))
+        link = ("%s:%s:%s:%s:%s:%s" % (self.website, user['port'], protocol, user['method'], obfs, passwd64.replace('=','')))
         return "ssr://"+str(base64.b64encode(link.encode('utf-8')),'utf-8')
 
 
@@ -275,9 +276,9 @@ class ssr(Address,MuMgr,Iptables):
             users=[]
             for i in mudb:
                 ssr = self.ssrlink(i)
-                ss = i['method'] + ':' + i['passwd'] + '@' + self.getipaddr() + ':' + str(i['port'])
+                ss = i['method'] + ':' + i['passwd'] + '@' + self.website + ':' + str(i['port'])
                 user={
-                    'ip':self.getipaddr(),
+                    'ip':self.website,
                     'traffic':self.triffic(i['transfer_enable']),
                     'used':self.triffic(i['d'] + i['u']),
                     'sslink':self.ss_link(ss),
