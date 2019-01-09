@@ -1,5 +1,7 @@
 # Shadowsocks web powered by django
 
+web.py version is strongly recommanded, this repo will not update anymore, see [web.py version](https://github.com/131mm/ssweb-web.py)
+
 ## Functions:
 
 - [x] 1、add user
